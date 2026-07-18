@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/NeoCore/static/css/main.43b244b6.css",
+    "main.css": "/NeoCore/static/css/main.e9faa897.css",
     "main.js": "/NeoCore/static/js/main.2a3df0fb.js",
     "index.html": "/NeoCore/index.html",
-    "main.43b244b6.css.map": "/NeoCore/static/css/main.43b244b6.css.map",
+    "main.e9faa897.css.map": "/NeoCore/static/css/main.e9faa897.css.map",
     "main.2a3df0fb.js.map": "/NeoCore/static/js/main.2a3df0fb.js.map"
   },
   "entrypoints": [
-    "static/css/main.43b244b6.css",
+    "static/css/main.e9faa897.css",
     "static/js/main.2a3df0fb.js"
   ]
 }

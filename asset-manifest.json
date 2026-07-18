@@ -1,10 +1,10 @@
 {
   "files": {
-    "main.css": "/milesupsherislive-ship-it/NeoCore/static/css/main.43b244b6.css",
-    "main.js": "/milesupsherislive-ship-it/NeoCore/static/js/main.2a3df0fb.js",
-    "index.html": "/milesupsherislive-ship-it/NeoCore/index.html",
-    "main.43b244b6.css.map": "/milesupsherislive-ship-it/NeoCore/static/css/main.43b244b6.css.map",
-    "main.2a3df0fb.js.map": "/milesupsherislive-ship-it/NeoCore/static/js/main.2a3df0fb.js.map"
+    "main.css": "/NeoCore/static/css/main.43b244b6.css",
+    "main.js": "/NeoCore/static/js/main.2a3df0fb.js",
+    "index.html": "/NeoCore/index.html",
+    "main.43b244b6.css.map": "/NeoCore/static/css/main.43b244b6.css.map",
+    "main.2a3df0fb.js.map": "/NeoCore/static/js/main.2a3df0fb.js.map"
   },
   "entrypoints": [
     "static/css/main.43b244b6.css",

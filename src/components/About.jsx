@@ -83,7 +83,7 @@ function About() {
             <div className="col-lg-6">
               <div className="about-image-wrapper">
                 <img 
-                    src="/images/lab-neocore.png" 
+                    src="images/lab-neocore.png" 
                     alt="Лаборатория NeoCore" 
                     className="about-image"
                 />

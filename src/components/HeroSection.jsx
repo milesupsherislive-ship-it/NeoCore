@@ -15,7 +15,7 @@ function HeroSection() {
       
       {/* Изображение */}
       <div className="hero-image-bg">
-        <img src="/images/hero-cyborg.png" alt="NeoCore Bio Prosthesis" />
+        <img src="images/hero-cyborg.png" alt="NeoCore Bio Prosthesis" />
       </div>
       
       {/* Зелёный градиент поверх изображения */}

@@ -30,7 +30,7 @@ function Header() {
     <nav className="navbar navbar-expand-lg navbar-neocore fixed-top">
       <div className="container">
         <a className="navbar-brand" href="#hero">
-            <img src="/images/logo.png" alt="NeoCore" className="brand-logo" />
+            <img src="images/logo.png" alt="NeoCore" className="brand-logo" />
         </a>
         <button
           className="navbar-toggler"

@@ -7,7 +7,7 @@ function Footer() {
         <div className="row g-4 py-5">
           <div className="col-lg-4 col-md-6">
             <div className="footer-brand mb-3">
-              <img src="/images/logo-footer.png" alt="NeoCore" className="footer-logo" />
+              <img src="images/logo-footer.png" alt="NeoCore" className="footer-logo" />
             </div>
             <p className="text-muted">
               Передовые технологии биопротезирования. Возвращаем возможности, 

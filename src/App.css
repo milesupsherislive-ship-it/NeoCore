@@ -1147,3 +1147,64 @@ body {
 .footer-section .footer-bottom p {
   color: #888888 !important;
 }
+
+/* Адаптация Hero Section для мобильных */
+@media (max-width: 768px) {
+  .hero-section {
+    min-height: 100vh;
+    padding-top: 100px !important;
+  }
+  
+  .hero-content h1 {
+    font-size: 2rem !important;
+  }
+  
+  .hero-content p {
+    font-size: 1rem !important;
+  }
+  
+  .hero-image img {
+    max-height: 300px !important; /* Уменьшаем высоту картинки */
+    object-fit: contain;
+  }
+}
+
+/* Адаптация карусели для мобильных */
+@media (max-width: 768px) {
+  .features-carousel-wrapper {
+    height: 400px !important; /* Уменьшаем высоту */
+  }
+  
+  .feature-card {
+    width: 280px !important; /* Уменьшаем ширину карточки */
+    margin-left: -140px !important;
+  }
+  
+  .feature-card h3 {
+    font-size: 1.2rem !important;
+  }
+  
+  .feature-icon {
+    font-size: 2.5rem !important;
+  }
+}
+
+/* Адаптация тарифов для мобильных */
+@media (max-width: 768px) {
+  .pricing-carousel-wrapper {
+    height: 650px !important; /* Уменьшаем высоту */
+  }
+  
+  .pricing-card {
+    width: 300px !important; /* Уменьшаем ширину */
+    margin-left: -150px !important;
+  }
+  
+  .pricing-price .price-amount {
+    font-size: 2rem !important;
+  }
+  
+  .pricing-features ul {
+    font-size: 0.85rem !important;
+  }
+}

@@ -34,6 +34,7 @@
 https://milesupsherislive-ship-it.github.io/React/
 
 ## Структура проекта
+```text
 src/
 ├── components/
 │   ├── Header.jsx          — навигация, плавный скролл
@@ -49,3 +50,4 @@ src/
 ├── App.js                  — сборка компонентов
 ├── index.js                — точка входа
 └── App.css                 — стили
+```

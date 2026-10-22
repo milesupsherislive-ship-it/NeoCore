@@ -1,11 +1,9 @@
 import React, { useEffect } from 'react';
-import $ from 'jquery';
 
 function HeroSection() {
   useEffect(() => {
-    $(document).ready(function () {
-      $('.hero-content').addClass('animate-fadeInUp');
-    });
+    const el = document.querySelector('.hero-content');
+    if (el) el.classList.add('animate-fadeInUp');
   }, []);
 
   return (

@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react';
-import $ from 'jquery';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import useRevealOnScroll from '../useRevealOnScroll';
 
 const featuresData = [
   {
@@ -30,101 +30,107 @@ const featuresData = [
 ];
 
 function Features() {
+  const total = featuresData.length;
+  const [current, setCurrent] = useState(2);
+  const currentRef = useRef(current);
+  currentRef.current = current;
+
+  const viewportRef = useRef(null);
+  const trackRef = useRef(null);
   const carouselRef = useRef(null);
-  const currentIndexRef = useRef(2);
+  const stepRef = useRef(320);
+  const pausedRef = useRef(false);
+  const sectionRef = useRevealOnScroll('.feature-card');
 
+  const goTo = useCallback((index) => {
+    const n = featuresData.length;
+    setCurrent(((index % n) + n) % n);
+  }, []);
+
+  // Расчёт шага слайда по фактической ширине карточки (стабильные зазоры)
   useEffect(() => {
-    const $carousel = $(carouselRef.current);
-    const $cards = $carousel.find('.feature-card');
-    const totalCards = $cards.length;
-    let current = 2;
-    let autoPlayInterval;
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+    if (!viewport || !track) return undefined;
 
-    function updateCarousel() {
-      $cards.each(function (index) {
-        const $card = $(this);
-        let offset = index - current;
+    const updateStep = () => {
+      const card = track.querySelector('.feature-card');
+      if (!card) return;
+      const gapPx = parseFloat(getComputedStyle(track).columnGap) || 20;
+      stepRef.current = card.getBoundingClientRect().width + gapPx;
+      // Синхронизируем позицию без анимации после изменения размеров
+      track.style.transform = `translateX(${-currentRef.current * stepRef.current}px)`;
+    };
 
-        // Handle wrapping
-        if (offset > totalCards / 2) offset -= totalCards;
-        if (offset < -totalCards / 2) offset += totalCards;
-
-        const absOffset = Math.abs(offset);
-        const translateX = offset * 280;
-        const scale = Math.max(0.6, 1 - absOffset * 0.15);
-        const opacity = Math.max(0.3, 1 - absOffset * 0.3);
-        const zIndex = 10 - absOffset;
-        const blur = absOffset > 1 ? 2 : 0;
-
-        $card.css({
-          transform: `translateX(${translateX}px) scale(${scale})`,
-          opacity: opacity,
-          zIndex: zIndex,
-          filter: `blur(${blur}px)`,
-          transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        });
-
-        if (absOffset === 0) {
-          $card.addClass('active');
-        } else {
-          $card.removeClass('active');
-        }
-      });
-    }
-
-    function nextCard() {
-      current = (current + 1) % totalCards;
-      updateCarousel();
-    }
-
-    function prevCard() {
-      current = (current - 1 + totalCards) % totalCards;
-      updateCarousel();
-    }
-
-    // Initial setup
-    $cards.css({
-      position: 'absolute',
-      left: '50%',
-      top: '50%',
-      marginLeft: '-150px',
-      marginTop: '-175px',
-      width: '300px',
-    });
-
-    updateCarousel();
-
-    // Auto play
-    autoPlayInterval = setInterval(nextCard, 4000);
-
-    // Controls
-    $('.features-next').on('click', function () {
-      clearInterval(autoPlayInterval);
-      nextCard();
-      autoPlayInterval = setInterval(nextCard, 4000);
-    });
-
-    $('.features-prev').on('click', function () {
-      clearInterval(autoPlayInterval);
-      prevCard();
-      autoPlayInterval = setInterval(nextCard, 4000);
-    });
-
-    // Pause on hover
-    $carousel.on('mouseenter', function () {
-      clearInterval(autoPlayInterval);
-    });
-    $carousel.on('mouseleave', function () {
-      autoPlayInterval = setInterval(nextCard, 4000);
-    });
-
+    updateStep();
+    const observer = new ResizeObserver(updateStep);
+    observer.observe(viewport);
+    window.addEventListener('resize', updateStep);
     return () => {
-      clearInterval(autoPlayInterval);
+      observer.disconnect();
+      window.removeEventListener('resize', updateStep);
     };
   }, []);
 
+  // Смещение трека при смене слайда (только transform, без конкурентных CSS-стилей)
+  useEffect(() => {
+    const track = trackRef.current;
+    if (track) {
+      track.style.transform = `translateX(${-current * stepRef.current}px)`;
+    }
+  }, [current]);
+
+  // Автопрокрутка: один интервал; пауза при наведении и неактивной вкладке
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return undefined;
+
+    let intervalId = null;
+    const start = () => {
+      if (intervalId === null && !pausedRef.current && !document.hidden) {
+        intervalId = setInterval(() => {
+          setCurrent((c) => (c + 1) % total);
+        }, 4000);
+      }
+    };
+    const stop = () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const onEnter = () => {
+      pausedRef.current = true;
+      stop();
+    };
+    const onLeave = () => {
+      pausedRef.current = false;
+      start();
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    carousel.addEventListener('mouseenter', onEnter);
+    carousel.addEventListener('mouseleave', onLeave);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    start();
+
+    return () => {
+      stop();
+      carousel.removeEventListener('mouseenter', onEnter);
+      carousel.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [total]);
+
+  const handlePrev = () => goTo(currentRef.current - 1);
+  const handleNext = () => goTo(currentRef.current + 1);
+
   return (
-    <section id="features" className="features-section section-padding">
+    <section id="features" className="features-section section-padding" ref={sectionRef}>
       <div className="container">
         <div className="text-center mb-5">
           <span className="badge-neocore">
@@ -138,27 +144,55 @@ function Features() {
         </div>
 
         <div className="features-carousel-wrapper" ref={carouselRef}>
-          {featuresData.map((feature, index) => (
-            <div className="feature-card" key={index}>
-              <div className="feature-icon">
-                <i className={`fas ${feature.icon}`}></i>
-              </div>
-              <h3 className="feature-title">{feature.title}</h3>
-              <p className="feature-description">{feature.description}</p>
-              <a href="#contact" className="feature-link">
-                Подробнее <i className="fas fa-arrow-right ms-1"></i>
-              </a>
+          <div className="features-carousel-viewport" ref={viewportRef}>
+            <div className="features-carousel-track" ref={trackRef}>
+              {featuresData.map((feature, index) => (
+                <div
+                  className={`feature-card${index === current ? ' active' : ''}`}
+                  key={index}
+                  aria-hidden={index !== current}
+                >
+                  <div className="feature-icon">
+                    <i className={`fas ${feature.icon}`}></i>
+                  </div>
+                  <h3 className="feature-title">{feature.title}</h3>
+                  <p className="feature-description">{feature.description}</p>
+                  <a href="#contact" className="feature-link">
+                    Подробнее <i className="fas fa-arrow-right ms-1"></i>
+                  </a>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div className="features-controls d-flex justify-content-center gap-3 mt-4">
-          <button className="btn btn-outline-neocore features-prev">
+          <button
+            type="button"
+            className="btn btn-outline-neocore carousel-arrow features-prev"
+            onClick={handlePrev}
+            aria-label="Предыдущее преимущество"
+          >
             <i className="fas fa-chevron-left"></i>
           </button>
-          <button className="btn btn-outline-neocore features-next">
+          <button
+            type="button"
+            className="btn btn-outline-neocore carousel-arrow features-next"
+            onClick={handleNext}
+            aria-label="Следующее преимущество"
+          >
             <i className="fas fa-chevron-right"></i>
           </button>
+        </div>
+
+        <div className="features-controls d-flex justify-content-center gap-3">
+          {featuresData.map((feature, index) => (
+            <button
+              type="button"
+              key={index}
+              className={`carousel-dot${index === current ? ' active' : ''}`}
+              onClick={() => goTo(index)}
+              aria-label={`Слайд ${index + 1}: ${feature.title}`}
+            />
+          ))}
         </div>
       </div>
     </section>

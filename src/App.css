@@ -7,7 +7,7 @@
   --nc-gray-light: #f8f9fa;
   --nc-gray-dark: #343a40;
   --nc-white: #ffffff;
-  --nc-transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --nc-transition: background-color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), color 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 html {
@@ -156,6 +156,33 @@ body {
   animation: float 6s ease-in-out infinite;
 }
 
+/* Появление при прокрутке (IntersectionObserver, см. useRevealOnScroll.js) */
+.reveal-hidden {
+  opacity: 0;
+  transform: translateY(40px);
+}
+
+.reveal-hidden.revealed {
+  animation: fadeInUp 0.8s ease forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal-hidden {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .section-title {
@@ -171,7 +198,7 @@ body {
   background: rgba(255, 255, 255, 0.95);
   backdrop-filter: blur(10px);
   padding: 15px 0;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, box-shadow 0.3s ease, padding 0.3s ease;
   box-shadow: none;
 }
 
@@ -366,25 +393,37 @@ body {
 .features-section {
   background: var(--nc-white);
   position: relative;
-  padding-bottom: 150px !important;
 }
 
 .features-carousel-wrapper {
   position: relative;
-  height: 350px !important; 
-  margin-bottom: 100px !important;
   width: 100%;
-  overflow: visible;
+}
+
+/* Видимая область карусели: ширина трека ограничена, карточки в потоке flex */
+.features-carousel-viewport {
+  width: min(340px, calc(100% - 112px));
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.features-carousel-track {
+  display: flex;
+  align-items: stretch;
+  gap: 20px;
+  will-change: transform;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .feature-card {
+  flex: 0 0 100%;
   background: var(--nc-white);
   border-radius: 20px;
   padding: 40px 30px;
   text-align: center;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   border: 2px solid transparent;
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .feature-card.active {
@@ -430,11 +469,57 @@ body {
   color: var(--nc-green);
 }
 
-.features-controls {
-  position: relative !important;
-  z-index: 20 !important;
-  margin-top: 50px !important; /* Отступ сверху */
-  padding-top: 20px;
+/* Стрелки навигации — по бокам viewport, вертикально по центру карточек.
+   Позиционируются от области карусели, а не от содержимого карточек. */
+.carousel-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--nc-white);
+  z-index: 5;
+}
+
+.carousel-arrow:hover {
+  transform: translateY(-50%);
+}
+
+.features-prev,
+.pricing-prev {
+  left: max(8px, calc(50% - 170px - 62px));
+}
+
+.features-next,
+.pricing-next {
+  right: max(8px, calc(50% - 170px - 62px));
+}
+
+.features-controls,
+.pricing-controls {
+  margin-top: 24px;
+}
+
+/* Точки-индикаторы слайдов */
+.carousel-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: none;
+  padding: 0;
+  background: rgba(0, 230, 118, 0.3);
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.3s ease;
+}
+
+.carousel-dot.active {
+  background: var(--nc-green);
+  transform: scale(1.25);
 }
 
 /* ===== ABOUT SECTION ===== */
@@ -448,7 +533,7 @@ body {
   padding: 30px;
   position: relative;
   overflow: hidden;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   height: 100%;
 }
 
@@ -501,8 +586,16 @@ body {
   width: 100%;
   height: 400px;
   object-fit: cover;
+  object-position: center;
   display: block;
   border-radius: 20px;
+}
+
+@media (max-width: 768px) {
+  .about-image {
+    height: auto;
+    aspect-ratio: 4 / 3;
+  }
 }
 
 .about-stat h4 {
@@ -528,7 +621,7 @@ body {
   padding: 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   height: 100%;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
   border: 1px solid #f0f0f0;
 }
 
@@ -585,7 +678,7 @@ body {
   border-radius: 10px;
   font-weight: 600;
   color: var(--nc-gray);
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 .partner-logo:hover {
@@ -601,25 +694,37 @@ body {
 
 .pricing-carousel-wrapper {
   position: relative;
-  height: 650px; /* Увеличенная высота для карточек */
   width: 100%;
-  overflow: visible;
 }
 
+.pricing-carousel-viewport {
+  width: min(350px, calc(100% - 112px));
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.pricing-carousel-track {
+  display: flex;
+  align-items: stretch;
+  gap: 24px;
+  will-change: transform;
+  transition: transform 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
 
 .pricing-card {
+  flex: 0 0 100%;
   background: var(--nc-white);
   border-radius: 20px;
   padding: 40px 30px;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
   border: 2px solid transparent;
-  transition: all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  margin-left: -175px;
-  margin-top: -280px; /* Подняли карточки выше */
-  width: 350px;
+  transition: border-color 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: flex;
+  flex-direction: column;
+}
+
+.pricing-features {
+  flex: 1;
 }
 
 
@@ -672,10 +777,11 @@ body {
 }
 
 .price-amount {
-  font-size: 3rem;
+  font-size: clamp(1.75rem, 1.1rem + 2.6vw, 3rem);
   font-weight: 900;
   color: var(--nc-dark);
   line-height: 1;
+  white-space: nowrap; /* цена всегда в одну строку, разделители — неразрывные */
 }
 
 .pricing-period {
@@ -703,38 +809,6 @@ body {
 
 .pricing-features li i {
   color: var(--nc-green);
-}
-
-/* Кнопки навигации под каруселью */
-.pricing-controls {
-  position: relative;
-  z-index: 20;
-  margin-top: 20px;
-}
-
-.pricing-controls .btn {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.pricing-carousel-wrapper {
-  height: 700px !important;
-  margin-bottom: 100px !important;
-}
-
-.pricing-controls {
-  margin-top: 50px !important;
-  position: relative !important;
-  z-index: 100 !important;
-}
-
-.pricing-card {
-  margin-top: -300px !important;
 }
 
 /* ===== CONTACT SECTION ===== */
@@ -765,7 +839,7 @@ body {
   border-radius: 12px;
   padding: 12px 16px;
   font-size: 1rem;
-  transition: all 0.3s ease;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
   background: var(--nc-white);
 }
 
@@ -851,7 +925,7 @@ body {
   justify-content: center;
   color: var(--nc-white);
   text-decoration: none;
-  transition: all 0.3s ease;
+  transition: background-color 0.3s ease, color 0.3s ease, transform 0.3s ease;
   font-size: 1.1rem;
 }
 
@@ -876,20 +950,6 @@ body {
 @media (max-width: 992px) {
   .hero-title {
     font-size: 2.5rem;
-  }
-  .features-carousel-wrapper,
-  .pricing-carousel-wrapper {
-    height: auto;
-  }
-  .feature-card,
-  .pricing-card {
-    position: relative !important;
-    left: auto !important;
-    top: auto !important;
-    margin: 10px auto;
-    transform: none !important;
-    opacity: 1 !important;
-    filter: none !important;
   }
 }
 
@@ -948,35 +1008,9 @@ body {
   background: var(--nc-green);
 }
 
-.pricing-carousel-wrapper {
-  height: 600px !important;
-  margin-bottom: 120px !important;
-}
-
-.pricing-controls {
-  margin-top: 80px !important;
-  position: relative !important;
-  z-index: 100 !important;
-  padding-bottom: 40px;
-}
-
-.pricing-card {
-  margin-top: -320px !important;
-}
-
-.pricing-controls .btn {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  padding: 0;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
 /* ===== SOCIAL LINKS ===== */
 .social-link svg {
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .social-link:hover svg {
@@ -993,7 +1027,7 @@ body {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
-  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -1010,6 +1044,16 @@ body {
   overflow: hidden;
   background: linear-gradient(135deg, #f0fff4 0%, #e8f5e9 100%);
   position: relative;
+}
+
+/* Продукты — PNG без фона: сохраняем объект целиком */
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  display: block;
+  padding: 12px;
 }
 
 .product-image-placeholder {

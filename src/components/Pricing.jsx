@@ -1,11 +1,14 @@
-import React, { useEffect, useRef } from 'react';
-import $ from 'jquery';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import useRevealOnScroll from '../useRevealOnScroll';
 import AnimatedBackground from './AnimatedBackground';
+
+// Неразрывный пробел для разрядов цены — запрет переноса числа на две строки
+const NBSP = '\u00A0';
 
 const pricingData = [
   {
     name: 'Базовый',
-    price: '299 000',
+    price: `299${NBSP}000`,
     period: 'единоразово',
     description: 'Базовый протез конечности',
     features: [
@@ -19,7 +22,7 @@ const pricingData = [
   },
   {
     name: 'Профессиональный',
-    price: '599 000',
+    price: `599${NBSP}000`,
     period: 'единоразово',
     description: 'Расширенный пакет с реабилитацией',
     features: [
@@ -35,7 +38,7 @@ const pricingData = [
   },
   {
     name: 'Корпоративный',
-    price: '1 299 000',
+    price: `1${NBSP}299${NBSP}000`,
     period: 'единоразово',
     description: 'Полный пакет для клиник',
     features: [
@@ -51,7 +54,7 @@ const pricingData = [
   },
   {
     name: 'Премиум',
-    price: '2 499 000',
+    price: `2${NBSP}499${NBSP}000`,
     period: 'единоразово',
     description: 'Максимальные возможности',
     features: [
@@ -69,93 +72,109 @@ const pricingData = [
 ];
 
 function Pricing() {
+  const total = pricingData.length;
+  const [current, setCurrent] = useState(1);
+  const currentRef = useRef(current);
+  currentRef.current = current;
+
+  const viewportRef = useRef(null);
+  const trackRef = useRef(null);
   const carouselRef = useRef(null);
+  const stepRef = useRef(380);
+  const pausedRef = useRef(false);
+  const sectionRef = useRevealOnScroll('.pricing-card');
 
+  const goTo = useCallback((index) => {
+    const n = pricingData.length;
+    setCurrent(((index % n) + n) % n);
+  }, []);
+
+  // Шаг слайда = фактическая ширина карточки + зазор (стабильные отступы)
   useEffect(() => {
-    const $carousel = $(carouselRef.current);
-    const $cards = $carousel.find('.pricing-card');
-    const totalCards = $cards.length;
-    let current = 1;
-    let autoPlayInterval;
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+    if (!viewport || !track) return undefined;
 
-    function updateCarousel() {
-      $cards.each(function (index) {
-        const $card = $(this);
-        let offset = index - current;
+    const updateStep = () => {
+      const card = track.querySelector('.pricing-card');
+      if (!card) return;
+      const gapPx = parseFloat(getComputedStyle(track).columnGap) || 24;
+      stepRef.current = card.getBoundingClientRect().width + gapPx;
+      track.style.transform = `translateX(${-currentRef.current * stepRef.current}px)`;
+    };
 
-        const absOffset = Math.abs(offset);
-        const translateX = offset * 320;
-        const scale = Math.max(0.5, 1 - absOffset * 0.12);
-        const opacity = Math.max(0.3, 1 - absOffset * 0.25);
-        const zIndex = 10 - absOffset;
-
-        $card.css({
-          transform: `translateX(${translateX}px) scale(${scale})`,
-          opacity: opacity,
-          zIndex: zIndex,
-          transition: 'all 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        });
-
-        if (absOffset === 0) {
-          $card.addClass('active');
-        } else {
-          $card.removeClass('active');
-        }
-      });
-    }
-
-    function nextCard() {
-      current = (current + 1) % totalCards;
-      updateCarousel();
-    }
-
-    function prevCard() {
-      current = (current - 1 + totalCards) % totalCards;
-      updateCarousel();
-    }
-
-    $cards.css({
-      position: 'absolute',
-      left: '50%',
-      top: '50%',
-      marginLeft: '-175px',
-      marginTop: '-320px',
-      width: '350px',
-    });
-
-    updateCarousel();
-
-    autoPlayInterval = setInterval(nextCard, 5000);
-
-    $('.pricing-next').on('click', function () {
-      clearInterval(autoPlayInterval);
-      nextCard();
-      autoPlayInterval = setInterval(nextCard, 5000);
-    });
-
-    $('.pricing-prev').on('click', function () {
-      clearInterval(autoPlayInterval);
-      prevCard();
-      autoPlayInterval = setInterval(nextCard, 5000);
-    });
-
-    $carousel.on('mouseenter', function () {
-      clearInterval(autoPlayInterval);
-    });
-    $carousel.on('mouseleave', function () {
-      autoPlayInterval = setInterval(nextCard, 5000);
-    });
-
+    updateStep();
+    const observer = new ResizeObserver(updateStep);
+    observer.observe(viewport);
+    window.addEventListener('resize', updateStep);
     return () => {
-      clearInterval(autoPlayInterval);
+      observer.disconnect();
+      window.removeEventListener('resize', updateStep);
     };
   }, []);
 
+  // Смещение трека при смене слайда (только transform)
+  useEffect(() => {
+    const track = trackRef.current;
+    if (track) {
+      track.style.transform = `translateX(${-current * stepRef.current}px)`;
+    }
+  }, [current]);
+
+  // Автопрокрутка: один интервал; пауза при наведении и неактивной вкладке
+  useEffect(() => {
+    const carousel = carouselRef.current;
+    if (!carousel) return undefined;
+
+    let intervalId = null;
+    const start = () => {
+      if (intervalId === null && !pausedRef.current && !document.hidden) {
+        intervalId = setInterval(() => {
+          setCurrent((c) => (c + 1) % total);
+        }, 5000);
+      }
+    };
+    const stop = () => {
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+        intervalId = null;
+      }
+    };
+
+    const onEnter = () => {
+      pausedRef.current = true;
+      stop();
+    };
+    const onLeave = () => {
+      pausedRef.current = false;
+      start();
+    };
+    const onVisibilityChange = () => {
+      if (document.hidden) stop();
+      else start();
+    };
+
+    carousel.addEventListener('mouseenter', onEnter);
+    carousel.addEventListener('mouseleave', onLeave);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    start();
+
+    return () => {
+      stop();
+      carousel.removeEventListener('mouseenter', onEnter);
+      carousel.removeEventListener('mouseleave', onLeave);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [total]);
+
+  const handlePrev = () => goTo(currentRef.current - 1);
+  const handleNext = () => goTo(currentRef.current + 1);
+
   return (
-    <section id="pricing" className="pricing-section section-padding">
+    <section id="pricing" className="pricing-section section-padding" ref={sectionRef}>
       {/* Анимированный фон */}
       <AnimatedBackground />
-      
+
       <div className="container position-relative" style={{ zIndex: 2 }}>
         <div className="text-center mb-5">
           <span className="badge-neocore badge-dark">
@@ -169,46 +188,74 @@ function Pricing() {
         </div>
 
         <div className="pricing-carousel-wrapper" ref={carouselRef}>
-          {pricingData.map((plan, index) => (
-            <div className={`pricing-card ${plan.popular ? 'popular' : ''}`} key={index}>
-              {plan.popular && (
-                <div className="popular-badge">Популярный</div>
-              )}
-              <div className="pricing-header">
-                <h3 className="pricing-name">{plan.name}</h3>
-                <p className="pricing-description">{plan.description}</p>
-                <div className="pricing-price">
-                  <span className="price-currency">₽</span>
-                  <span className="price-amount">{plan.price}</span>
+          <div className="pricing-carousel-viewport" ref={viewportRef}>
+            <div className="pricing-carousel-track" ref={trackRef}>
+              {pricingData.map((plan, index) => (
+                <div
+                  className={`pricing-card${plan.popular ? ' popular' : ''}${index === current ? ' active' : ''}`}
+                  key={index}
+                  aria-hidden={index !== current}
+                >
+                  {plan.popular && (
+                    <div className="popular-badge">Популярный</div>
+                  )}
+                  <div className="pricing-header">
+                    <h3 className="pricing-name">{plan.name}</h3>
+                    <p className="pricing-description">{plan.description}</p>
+                    <div className="pricing-price">
+                      <span className="price-currency">₽</span>
+                      <span className="price-amount">{plan.price}</span>
+                    </div>
+                    <p className="pricing-period">{plan.period}</p>
+                  </div>
+                  <div className="pricing-features">
+                    <ul>
+                      {plan.features.map((feature, i) => (
+                        <li key={i}>
+                          <i className="fas fa-check-circle me-2"></i>
+                          {feature}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="pricing-footer">
+                    <a href="#contact" className={`btn ${plan.popular ? 'btn-neocore' : 'btn-outline-neocore'} w-100`}>
+                      Выбрать план
+                    </a>
+                  </div>
                 </div>
-                <p className="pricing-period">{plan.period}</p>
-              </div>
-              <div className="pricing-features">
-                <ul>
-                  {plan.features.map((feature, i) => (
-                    <li key={i}>
-                      <i className="fas fa-check-circle me-2"></i>
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="pricing-footer">
-                <a href="#contact" className={`btn ${plan.popular ? 'btn-neocore' : 'btn-outline-neocore'} w-100`}>
-                  Выбрать план
-                </a>
-              </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-        <div className="pricing-controls text-center mt-4">
-          <button className="btn btn-outline-neocore pricing-prev me-2">
+          <button
+            type="button"
+            className="btn btn-outline-neocore carousel-arrow pricing-prev"
+            onClick={handlePrev}
+            aria-label="Предыдущий тариф"
+          >
             <i className="fas fa-chevron-left"></i>
           </button>
-          <button className="btn btn-outline-neocore pricing-next">
+          <button
+            type="button"
+            className="btn btn-outline-neocore carousel-arrow pricing-next"
+            onClick={handleNext}
+            aria-label="Следующий тариф"
+          >
             <i className="fas fa-chevron-right"></i>
           </button>
+        </div>
+
+        <div className="pricing-controls d-flex justify-content-center gap-3">
+          {pricingData.map((plan, index) => (
+            <button
+              type="button"
+              key={index}
+              className={`carousel-dot${index === current ? ' active' : ''}`}
+              onClick={() => goTo(index)}
+              aria-label={`Тариф ${index + 1}: ${plan.name}`}
+            />
+          ))}
         </div>
 
         <p className="text-center text-light mt-4">

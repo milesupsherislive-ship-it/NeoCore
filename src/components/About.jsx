@@ -1,5 +1,5 @@
-import React, { useEffect } from 'react';
-import $ from 'jquery';
+import React from 'react';
+import useRevealOnScroll from '../useRevealOnScroll';
 
 const steps = [
   {
@@ -35,22 +35,10 @@ const steps = [
 ];
 
 function About() {
-  useEffect(() => {
-    $(document).ready(function () {
-      $(window).on('scroll', function () {
-        $('.step-card').each(function () {
-          const elementTop = $(this).offset().top;
-          const viewportBottom = $(window).scrollTop() + $(window).height();
-          if (elementTop < viewportBottom - 100) {
-            $(this).addClass('animate-fadeInUp');
-          }
-        });
-      });
-    });
-  }, []);
+  const sectionRef = useRevealOnScroll('.step-card');
 
   return (
-    <section id="about" className="about-section section-padding">
+    <section id="about" className="about-section section-padding" ref={sectionRef}>
       <div className="container">
         <div className="text-center mb-5">
           <span className="badge-neocore badge-dark">

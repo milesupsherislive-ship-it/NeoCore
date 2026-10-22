@@ -1192,63 +1192,95 @@ body {
   color: #888888 !important;
 }
 
-/* Адаптация Hero Section для мобильных */
+/* Адаптация Hero Section для мобильных.
+   Селекторы соответствуют реальной разметке HeroSection.jsx:
+   заголовок — .hero-title, подзаголовок — .hero-subtitle,
+   изображение находится внутри .hero-image-bg (селектора .hero-image в JSX нет). */
 @media (max-width: 768px) {
   .hero-section {
     min-height: 100vh;
     padding-top: 100px !important;
   }
-  
-  .hero-content h1 {
-    font-size: 2rem !important;
+
+  .hero-title {
+    font-size: clamp(1.75rem, 1.2rem + 3vw, 2rem);
   }
-  
-  .hero-content p {
-    font-size: 1rem !important;
+
+  .hero-subtitle {
+    font-size: 1rem;
   }
-  
-  .hero-image img {
-    max-height: 300px !important; /* Уменьшаем высоту картинки */
-    object-fit: contain;
+
+  /* Главное изображение: масштабируется по высоте секции без искажения
+     пропорций; cover + center обрезает только поля на узком экране */
+  .hero-image-bg img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center top;
   }
 }
 
-/* Адаптация карусели для мобильных */
+/* Адаптация карусели преимуществ для мобильных.
+   Новая реализация Features.jsx смещает трек через transform, поэтому
+   фиксированная высота wrapper и отрицательный margin-left карточек удалены. */
 @media (max-width: 768px) {
-  .features-carousel-wrapper {
-    height: 400px !important; /* Уменьшаем высоту */
+  .features-carousel-viewport {
+    width: min(340px, calc(100% - 96px));
   }
-  
+
   .feature-card {
-    width: 280px !important; /* Уменьшаем ширину карточки */
-    margin-left: -140px !important;
+    padding: 30px 20px;
   }
-  
-  .feature-card h3 {
-    font-size: 1.2rem !important;
+
+  .feature-title {
+    font-size: 1.2rem;
   }
-  
+
   .feature-icon {
-    font-size: 2.5rem !important;
+    width: 70px;
+    height: 70px;
+    font-size: 2rem;
+  }
+
+  .carousel-arrow {
+    width: 40px;
+    height: 40px;
+  }
+
+  .features-prev {
+    left: 4px;
+  }
+
+  .features-next {
+    right: 4px;
   }
 }
 
-/* Адаптация тарифов для мобильных */
+/* Адаптация карусели тарифов для мобильных.
+   Аналогично Pricing.jsx: без фиксированной высоты wrapper и отрицательных
+   отступов; размер цены остаётся адаптивным (clamp в базовом правиле). */
 @media (max-width: 768px) {
-  .pricing-carousel-wrapper {
-    height: 650px !important; /* Уменьшаем высоту */
+  .pricing-carousel-viewport {
+    width: min(350px, calc(100% - 96px));
   }
-  
+
   .pricing-card {
-    width: 300px !important; /* Уменьшаем ширину */
-    margin-left: -150px !important;
+    padding: 30px 20px;
   }
-  
-  .pricing-price .price-amount {
-    font-size: 2rem !important;
+
+  .pricing-name {
+    font-size: 1.3rem;
   }
-  
+
   .pricing-features ul {
-    font-size: 0.85rem !important;
+    font-size: 0.9rem;
+  }
+
+  .pricing-prev {
+    left: 4px;
+  }
+
+  .pricing-next {
+    right: 4px;
   }
 }
